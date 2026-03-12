@@ -1,4 +1,4 @@
-import { Schema, Document, Model, Types, model } from "mongoose";
+import { Schema, Document, Model, Types, model } from 'mongoose';
 
 interface IPlayerDoc extends Document {
   name: string;
@@ -17,12 +17,12 @@ const playerSchema = new Schema<IPlayerDoc, IPlayerModel>(
     },
     club: {
       type: Schema.Types.ObjectId,
-      ref: "Club",
-      required: true,
+      ref: 'Club',
+      required: false,
     },
     nationality: {
       type: Schema.Types.ObjectId,
-      ref: "Nation",
+      ref: 'Nation',
       required: true,
     },
     yob: {
@@ -30,9 +30,9 @@ const playerSchema = new Schema<IPlayerDoc, IPlayerModel>(
       required: true,
     },
   },
-  { timestamps: true, collection: "players" },
+  { timestamps: true, collection: 'players' },
 );
 
-const Player = model<IPlayerDoc, IPlayerModel>("Player", playerSchema);
+const Player = model<IPlayerDoc, IPlayerModel>('Player', playerSchema);
 
 export default Player;

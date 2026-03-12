@@ -62,6 +62,7 @@ export const create = async (data: IClub) => {
   if (headCoach?.trim()) {
     const coach = await Coach.findById(headCoach).lean();
     if (!coach) throw new Error('Coach not found');
+    if (coach.club) throw new Error('Coach is already assigned to another club');
     coachId = new Types.ObjectId(headCoach);
   }
 
@@ -72,6 +73,10 @@ export const create = async (data: IClub) => {
     headCoach: coachId,
     numberOfPlayers: 0,
   });
+
+  if (coachId) {
+    await Coach.findByIdAndUpdate(coachId, { club: club._id });
+  }
 
   return club;
 };
@@ -84,10 +89,16 @@ export const update = async (id: string, data: IClub) => {
   const nation = await Nation.findById(nationality).lean();
   if (!nation) throw new Error('Nation not found');
 
+  const oldClub = await Club.findById(id).lean();
+  if (!oldClub) throw new Error('Club not found');
+
   let coachId;
   if (headCoach?.trim()) {
     const coach = await Coach.findById(headCoach).lean();
     if (!coach) throw new Error('Coach not found');
+    if (coach.club && coach.club.toString() !== oldClub._id.toString()) {
+      throw new Error('Coach is already assigned to another club');
+    }
     coachId = new Types.ObjectId(headCoach);
   }
 
@@ -104,11 +115,34 @@ export const update = async (id: string, data: IClub) => {
 
   if (!club) throw new Error('Club not found');
 
+  // Sync Coach data if headCoach changed
+  if (oldClub.headCoach?.toString() !== coachId?.toString()) {
+    // Unset old coach
+    if (oldClub.headCoach) {
+      await Coach.findByIdAndUpdate(oldClub.headCoach, {
+        $unset: { club: '' },
+      });
+    }
+    // Set new coach
+    if (coachId) {
+      await Coach.findByIdAndUpdate(coachId, { club: club._id });
+    }
+  }
+
   return club;
 };
 
 export const remove = async (id: string) => {
-  const club = await Club.findByIdAndDelete(id);
+  const club = await Club.findById(id).lean();
   if (!club) throw new Error('Club not found');
+
+  // Unset coach if any
+  if (club.headCoach) {
+    await Coach.findByIdAndUpdate(club.headCoach, { $unset: { club: '' } });
+  }
+
+  // Also might need to handle players here, but staying focused on the request
+  await Club.findByIdAndDelete(id);
+
   return club;
 };
