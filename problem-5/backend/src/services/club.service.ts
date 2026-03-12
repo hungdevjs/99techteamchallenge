@@ -19,7 +19,7 @@ export const get = async ({
 }) => {
   const query = {
     ...(search && { name: { $regex: search, $options: 'i' } }),
-    ...(countries.length && { nationality: { $in: countries } }),
+    ...(countries?.length && { nationality: { $in: countries } }),
   };
 
   const items = await Club.find(query)
@@ -62,7 +62,8 @@ export const create = async (data: IClub) => {
   if (headCoach?.trim()) {
     const coach = await Coach.findById(headCoach).lean();
     if (!coach) throw new Error('Coach not found');
-    if (coach.club) throw new Error('Coach is already assigned to another club');
+    if (coach.club)
+      throw new Error('Coach is already assigned to another club');
     coachId = new Types.ObjectId(headCoach);
   }
 
